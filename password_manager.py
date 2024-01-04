@@ -2,56 +2,71 @@
 File: password_manager.py
 Description: Generates passwords for different accounts
 Author: Justin Thoreson
-Date: 27 November 2023
+Date: 3 January 2024
 """
 
-from typing import Any
 from argparse import ArgumentParser
-from hashlib import sha256, sha512
+from hashlib import sha256
 from base64 import b64encode
-from random import seed, randint, choice
+from random import seed, sample, choices, shuffle
 
 class PasswordManager(object):
     """Manages password generation."""
 
-    __slots__ = 'sha'
+    UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    LOWER = 'abcdefghijklmnopqrstuvwxyz'
+    NUMBER = '0123456789'
+    SPECIAL = '?!@#$%^&*'
 
-    def __init__(self, algorithm: int):
-        """Initializes the SHA-2 algorithm to use when hashing."""
+    @staticmethod
+    def seed(service: str, secret: str, iteration: int):
+        """Seeds the pseudorandom generation."""
 
-        if not (algorithm == 256 or algorithm == 512):
-            raise ValueError('Unrecognized SHA-2 algorithm')
-        self.sha = sha512 if algorithm == 512 else sha256
+        composite = ''.join([service, secret, str(iteration)])
+        composite_h = PasswordManager.__hash(composite)
+        seed(composite_h)
     
-    def generate_password(self, service: str, secret: str, iteration: int) -> str:
+    @staticmethod
+    def generate_password(
+        min_length: int,
+        include_upper: bool = True,
+        include_lower: bool = True,
+        include_number: bool = True,
+        include_special: bool = True
+    ) -> str:
         """
         Generates a password.
-        :param service: The service in which to generate a password for
-        :param secret: A secret phrase
-        :param iteration: The number of times this password has been generated
+        :param min_length: The minimum length of the password
+        :param upper: Whether to include uppercase letters
+        :param lower: Whether to include lowercase letters
+        :param number: Whether to include numbers
+        :param special: Whether to include special characters
         :return: A generated password
         """
 
-        service_h = self.__hash(service)
-        secret_h = self.__hash(secret)
-        iteration_h = self.__hash(iteration)
-        composite = ''.join([service_h, secret_h, iteration_h])
-        composite_h = self.__hash(composite)
-        composite_b64str = self.__encode(composite_h).decode()
-        composite_trimmed = self.__trimb64(composite_b64str)
-        return self.__insert_special_chars(composite_trimmed)
+        num_components = include_upper + include_lower + include_number + include_special
+        if num_components <= 0:
+            raise ValueError('Password must include at least one character type')
+        num_each = PasswordManager.__ceil_div(min_length, num_components)
+        uppers = PasswordManager.__sample(PasswordManager.UPPER, num_each) if include_upper else ''
+        lowers = PasswordManager.__sample(PasswordManager.LOWER, num_each) if include_lower else ''
+        numbers = PasswordManager.__sample(PasswordManager.NUMBER, num_each) if include_number else ''
+        specials = PasswordManager.__sample(PasswordManager.SPECIAL, num_each) if include_special else ''
+        composite = ''.join([uppers, lowers, numbers, specials])
+        return PasswordManager.__shuffle(composite)
 
-    def __hash(self, data: Any) -> str:
+    @staticmethod
+    def __hash(data: str) -> str:
         """
         Hashes encoded data.
         :param data: The data to hash
         :return: The hexadecimal string representation of the hashed data
         """
 
-        return self.sha(self.__encode(data)).hexdigest()
+        return sha256(PasswordManager.__encode(data)).hexdigest()
 
     @staticmethod
-    def __encode(data: Any) -> bytes:
+    def __encode(data: str) -> bytes:
         """Encodes data to base 64."""
 
         data_str = str(data)
@@ -59,35 +74,35 @@ class PasswordManager(object):
         return b64encode(data_utf8)
 
     @staticmethod
-    def __trimb64(data: str) -> str:
-        """Removes the '=' padding from a base 64 string."""
+    def __ceil_div(dividend: int, divisor: int) -> int:
+        """Peforms ceiling division."""
 
-        return data.split('=')[0]
+        return -(dividend // -divisor)
 
     @staticmethod
-    def __insert_special_chars(data: str) -> str:
-        """Inserts special characters pseudorandomly into a string."""
+    def __sample(data: str, count: int, allow_duplicates: bool = True) -> str:
+        """
+        Samples characters from a string pseudorandomly.
+        :param data: The string to sample characters from
+        :param count: The number of characters to sample
+        :param allow_duplicates: Whether duplicate selections are allowed
+        """
 
-        special_chars = list('?!@#$%^&*')
-        seed(data)
-        num_chars = randint(1, int(len(data) / 2))
-        for _ in range(num_chars):
-            index = randint(0, len(data) - 1)
-            char = choice(special_chars)
-            data = ''.join([data[:index], char, data[index:]])
-        return data
+        selection = choices(data, k=count) if allow_duplicates else sample(data, k=count)
+        return ''.join(selection)
+
+    @staticmethod
+    def __shuffle(data: str) -> str:
+        """Shuffles characters in a string."""
+
+        data_l = list(data)
+        shuffle(data_l)
+        return ''.join(data_l)
 
 def parse_args() -> tuple:
     """Parses command line arguments."""
     
     arg_parser = ArgumentParser()
-    arg_parser.add_argument(
-        '-a', '--algorithm',
-        type=int,
-        choices=[256, 512],
-        default=256,
-        help='which SHA-2 algorithm to use'
-    )
     arg_parser.add_argument(
         'service',
         type=str,
@@ -95,7 +110,7 @@ def parse_args() -> tuple:
     )
     arg_parser.add_argument(
         'secret',
-        type=str, 
+        type=str,
         help='a secret phrase'
     )
     arg_parser.add_argument(
@@ -103,19 +118,45 @@ def parse_args() -> tuple:
         type=int,
         help='the number of times this password has been generated'
     )
-    args = arg_parser.parse_args()
-    return args.algorithm, args.service, args.secret, args.iteration
+    arg_parser.add_argument(
+        'min_length',
+        type=int,
+        help='the minimum length of the password'
+    )
+    arg_parser.add_argument(
+        '-u', '--upper',
+        action='store_true',
+        help='include uppercase letters'
+    )
+    arg_parser.add_argument(
+        '-l', '--lower',
+        action='store_true',
+        help='include lowercase letters'
+    )
+    arg_parser.add_argument(
+        '-n', '--number',
+        action='store_true',
+        help='include numbers'
+    )
+    arg_parser.add_argument(
+        '-s', '--special',
+        action='store_true',
+        help='include special characters'
+    )
+    return arg_parser.parse_args()
 
 def main() -> None:
     """Runs the password manager program."""
 
-    algorithm, service, secret, iteration = parse_args()
+    args = parse_args()
+    password_manager = PasswordManager.seed(
+        args.service, args.secret, args.iteration)
     try:
-        password_manager = PasswordManager(algorithm)
+        password = PasswordManager.generate_password(
+            args.min_length, args.upper, args.lower, args.number, args.special)
     except ValueError as e:
         print(e)
     else:
-        password = password_manager.generate_password(service, secret, iteration)
         print(password)
 
 if __name__ == '__main__':

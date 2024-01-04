@@ -32,25 +32,26 @@ class PasswordManager(object):
         :return: A generated password
         """
 
-        service_h = self.hash(service)
-        secret_h = self.hash(secret)
-        iteration_h = self.hash(iteration)
+        service_h = self.__hash(service)
+        secret_h = self.__hash(secret)
+        iteration_h = self.__hash(iteration)
         composite = ''.join([service_h, secret_h, iteration_h])
-        composite_h = self.hash(composite)
-        composite_b64str = self.encode(composite_h).decode()
-        return self.insertSpecialChars(composite_b64str)
+        composite_h = self.__hash(composite)
+        composite_b64str = self.__encode(composite_h).decode()
+        composite_trimmed = self.__trimb64(composite_b64str)
+        return self.__insert_special_chars(composite_trimmed)
 
-    def hash(self, data: Any) -> str:
+    def __hash(self, data: Any) -> str:
         """
         Hashes encoded data.
         :param data: The data to hash
         :return: The hexadecimal string representation of the hashed data
         """
 
-        return self.sha(self.encode(data)).hexdigest()
+        return self.sha(self.__encode(data)).hexdigest()
 
     @staticmethod
-    def encode(data: Any) -> bytes:
+    def __encode(data: Any) -> bytes:
         """Encodes data to base 64."""
 
         data_str = str(data)
@@ -58,16 +59,22 @@ class PasswordManager(object):
         return b64encode(data_utf8)
 
     @staticmethod
-    def insertSpecialChars(data: str) -> str:
+    def __trimb64(data: str) -> str:
+        """Removes the '=' padding from a base 64 string."""
+
+        return data.split('=')[0]
+
+    @staticmethod
+    def __insert_special_chars(data: str) -> str:
         """Inserts special characters pseudorandomly into a string."""
 
-        special_chars = ['?', '!', '@', '#', '$', '%']
+        special_chars = list('?!@#$%^&*')
         seed(data)
         num_chars = randint(1, int(len(data) / 2))
         for _ in range(num_chars):
             index = randint(0, len(data) - 1)
             char = choice(special_chars)
-            data = ''.join([data[:index], char, data[index:]]) 
+            data = ''.join([data[:index], char, data[index:]])
         return data
 
 def parse_args() -> tuple:
@@ -75,26 +82,26 @@ def parse_args() -> tuple:
     
     arg_parser = ArgumentParser()
     arg_parser.add_argument(
-        '--algorithm',
+        '-a', '--algorithm',
         type=int,
         choices=[256, 512],
         default=256,
-        help='Which SHA-2 algorithm to use'
+        help='which SHA-2 algorithm to use'
     )
     arg_parser.add_argument(
         'service',
         type=str,
-        help='The service in which to generate a password for'
+        help='the service in which to generate a password for'
     )
     arg_parser.add_argument(
         'secret',
         type=str, 
-        help='A secret phrase'
+        help='a secret phrase'
     )
     arg_parser.add_argument(
         'iteration',
         type=int,
-        help='The number of times this password has been generated'
+        help='the number of times this password has been generated'
     )
     args = arg_parser.parse_args()
     return args.algorithm, args.service, args.secret, args.iteration

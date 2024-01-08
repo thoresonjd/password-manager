@@ -1,13 +1,15 @@
 """
-File: main.py
+File: pm_cli.py
 Description: Manages passwords for different accounts
 Author: Justin Thoreson
-Date: 3 January 2024
+Date: January 2024
 """
 
 from argparse import ArgumentParser
 from password_generator import PasswordGenerator
 from logger import Logger
+
+LOG_FILENAME = 'log'
 
 def parse_args() -> tuple:
     """Parses command line arguments."""
@@ -59,8 +61,9 @@ def main() -> None:
     """Runs the password manager program."""
 
     args = parse_args()
-    service, secret, iteration, min_length, upper, lower, number, special = args 
-    PasswordGenerator.seed(service, secret, iteration)
+    service, secret, iteration, min_length, upper, lower, number, special = args
+    composite_seed = ''.join([service, secret, str(iteration)])
+    PasswordGenerator.seed(composite_seed)
     try:
         password = PasswordGenerator.generate(min_length, upper, lower, number, special)
     except ValueError as e:
@@ -73,7 +76,7 @@ def main() -> None:
             ('n' if number else ''),
             ('s' if special else '')])
         log = ' '.join([service, secret, str(iteration), str(min_length), characters])
-        logger = Logger('log')
+        logger = Logger(LOG_FILENAME)
         logger.log_if_not_exists(log)
 
 if __name__ == '__main__':

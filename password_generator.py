@@ -2,7 +2,7 @@
 File: password_generator.py
 Description: Handles password generation
 Author: Justin Thoreson
-Date: 3 January 2024
+Date: January 2024
 """
 
 from hashlib import sha256
@@ -18,12 +18,10 @@ class PasswordGenerator(object):
     SPECIAL = '?!@#$%^&*'
 
     @staticmethod
-    def seed(service: str, secret: str, iteration: int):
+    def seed(string: str):
         """Seeds the pseudorandom generation."""
 
-        composite = ''.join([service, secret, str(iteration)])
-        composite_h = PasswordGenerator.__hash(composite)
-        seed(composite_h)
+        seed(PasswordGenerator.__hash(string))
     
     @staticmethod
     def generate(

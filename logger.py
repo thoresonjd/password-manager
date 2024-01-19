@@ -29,10 +29,9 @@ class Logger(object):
         :return: True if the message was logged, False otherwise
         """
         
-        if message not in self.__logs:
+        if (message_not_exists := message not in self.__logs):
             self.log(message)
-            return True
-        return False
+        return message_not_exists
     
     def clear(self) -> None:
         """Clears all logs."""

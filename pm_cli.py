@@ -57,6 +57,24 @@ def parse_args() -> tuple:
     )
     return vars(arg_parser.parse_args()).values()
 
+def args_to_string(
+    service: str, secret: str, iteration: int, min_length: int,
+    upper: bool, lower: bool, number: bool, special: bool
+) -> str:
+    """Creates a string from the input arguments"""
+
+    options = options_to_string(upper, lower, number, special)
+    return ' '.join([service, secret, str(iteration), str(min_length), options])
+
+def options_to_string(upper: bool, lower: bool, number: bool, special: bool) -> str:
+    """Creates a string from the input options."""
+
+    return ''.join(['-',
+        ('u' if upper else ''),
+        ('l' if lower else ''),
+        ('n' if number else ''),
+        ('s' if special else '')])
+
 def main() -> None:
     """Runs the password manager program."""
 
@@ -70,12 +88,7 @@ def main() -> None:
         print(e)
     else:
         print(password)
-        characters = ''.join(['-',
-            ('u' if upper else ''),
-            ('l' if lower else ''),
-            ('n' if number else ''),
-            ('s' if special else '')])
-        log = ' '.join([service, secret, str(iteration), str(min_length), characters])
+        log = args_to_string(*args)
         logger = Logger(LOG_FILENAME)
         logger.log_if_not_exists(log)
 

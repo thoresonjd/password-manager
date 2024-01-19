@@ -66,9 +66,7 @@ class PasswordGenerator(object):
     def __encode(data: str) -> bytes:
         """Encodes data to base 64."""
 
-        data_str = str(data)
-        data_utf8 = data_str.encode('UTF-8')
-        return b64encode(data_utf8)
+        return b64encode(data.encode('UTF-8'))
 
     @staticmethod
     def __ceil_div(dividend: int, divisor: int) -> int:

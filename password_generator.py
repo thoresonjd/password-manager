@@ -14,7 +14,7 @@ class PasswordGenerator(object):
 
     UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     LOWER = 'abcdefghijklmnopqrstuvwxyz'
-    NUMBER = '0123456789'
+    DIGIT = '0123456789'
     SPECIAL = '?!@#$%^&*'
 
     @staticmethod
@@ -28,7 +28,7 @@ class PasswordGenerator(object):
         min_length: int,
         include_upper: bool = True,
         include_lower: bool = True,
-        include_number: bool = True,
+        include_digit: bool = True,
         include_special: bool = True
     ) -> str:
         """
@@ -41,15 +41,15 @@ class PasswordGenerator(object):
         :return: A generated password
         """
 
-        num_components = include_upper + include_lower + include_number + include_special
+        num_components = include_upper + include_lower + include_digit + include_special
         if num_components <= 0:
             raise ValueError('Password must include at least one character type')
         num_each = PasswordGenerator.__ceil_div(min_length, num_components)
         uppers = PasswordGenerator.__sample(PasswordGenerator.UPPER, num_each) if include_upper else ''
         lowers = PasswordGenerator.__sample(PasswordGenerator.LOWER, num_each) if include_lower else ''
-        numbers = PasswordGenerator.__sample(PasswordGenerator.NUMBER, num_each) if include_number else ''
+        digits = PasswordGenerator.__sample(PasswordGenerator.DIGIT, num_each) if include_digit else ''
         specials = PasswordGenerator.__sample(PasswordGenerator.SPECIAL, num_each) if include_special else ''
-        composite = ''.join([uppers, lowers, numbers, specials])
+        composite = ''.join([uppers, lowers, digits, specials])
         return PasswordGenerator.__shuffle(composite)
 
     @staticmethod

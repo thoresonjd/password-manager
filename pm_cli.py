@@ -46,9 +46,9 @@ def parse_args() -> tuple:
         help='include lowercase letters'
     )
     arg_parser.add_argument(
-        '-n', '--number',
+        '-d', '--digit',
         action='store_true',
-        help='include numbers'
+        help='include digits'
     )
     arg_parser.add_argument(
         '-s', '--special',
@@ -57,40 +57,49 @@ def parse_args() -> tuple:
     )
     return vars(arg_parser.parse_args()).values()
 
-def args_to_string(
-    service: str, secret: str, iteration: int, min_length: int,
-    upper: bool, lower: bool, number: bool, special: bool
-) -> str:
-    """Creates a string from the input arguments"""
+def log_args(args: tuple) -> None:
+    """Logs the provided arguments to a file."""
 
-    options = options_to_string(upper, lower, number, special)
-    return ' '.join([service, secret, str(iteration), str(min_length), options])
+    def args_to_string(
+        service: str, secret: str, iteration: int, min_length: int,
+        upper: bool, lower: bool, digit: bool, special: bool
+    ) -> str:
+        """Creates a string from the input arguments"""
 
-def options_to_string(upper: bool, lower: bool, number: bool, special: bool) -> str:
-    """Creates a string from the input options."""
+        options = options_to_string(upper, lower, digit, special)
+        return ' '.join(
+            [service, secret, str(iteration), str(min_length), options]
+        )
 
-    return ''.join(['-',
-        ('u' if upper else ''),
-        ('l' if lower else ''),
-        ('n' if number else ''),
-        ('s' if special else '')])
+    def options_to_string(
+        upper: bool, lower: bool, digit: bool, special: bool
+    ) -> str:
+        """Creates a string from the input options."""
+
+        return ''.join(['-',
+            ('u' if upper else ''),
+            ('l' if lower else ''),
+            ('d' if digit else ''),
+            ('s' if special else '')])
+
+    log = args_to_string(*args)
+    logger = Logger(LOG_FILENAME)
+    logger.log_if_not_exists(log)
 
 def main() -> None:
     """Runs the password manager program."""
 
     args = parse_args()
-    service, secret, iteration, min_length, upper, lower, number, special = args
+    service, secret, iteration, min_length, upper, lower, digit, special = args
     composite_seed = ''.join([service, secret, str(iteration)])
     PasswordGenerator.seed(composite_seed)
     try:
-        password = PasswordGenerator.generate(min_length, upper, lower, number, special)
+        password = PasswordGenerator.generate(min_length, upper, lower, digit, special)
     except ValueError as e:
         print(e)
     else:
         print(password)
-        log = args_to_string(*args)
-        logger = Logger(LOG_FILENAME)
-        logger.log_if_not_exists(log)
+        log_args(args)
 
 if __name__ == '__main__':
     main()

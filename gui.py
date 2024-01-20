@@ -25,6 +25,7 @@ TEXT_FONT_SIZE = 10
 PADDING = 10
 ICON_FILEPATH = 'assets/images/pm.ico'
 LOG_FILENAME = 'log'
+MAX_MIN_LENGTH = 250
 
 class GUI(object):
     """Represents all graphical user interface functionality."""
@@ -220,7 +221,7 @@ class Generator(tk.Frame):
         self.secret.pack(anchor=tk.W)
         self.iteration = tk.Spinbox(entry_frame, from_=1, to=maxsize, width=TEXT_FONT_SIZE, bg='white')
         self.iteration.pack(anchor=tk.W)
-        self.min_length = tk.Spinbox(entry_frame, from_=1, to=maxsize, width=TEXT_FONT_SIZE, bg='white')
+        self.min_length = tk.Spinbox(entry_frame, from_=1, to=MAX_MIN_LENGTH, width=TEXT_FONT_SIZE, bg='white')
         self.min_length.pack(anchor=tk.W)
         entry_frame.pack(side=tk.RIGHT)
         input_frame.pack(side=tk.TOP)
@@ -287,7 +288,7 @@ class Generator(tk.Frame):
         iteration = self.iteration.get()
         seed = ''.join([service, secret, str(iteration)])
         PasswordGenerator.seed(seed)
-        min_length = int(self.min_length.get())
+        min_length = MAX_MIN_LENGTH if (length := int(self.min_length.get())) > MAX_MIN_LENGTH else length
         upper = self.upper.get()
         lower = self.lower.get()
         digit = self.digit.get()

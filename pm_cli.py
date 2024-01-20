@@ -10,6 +10,7 @@ from password_generator import PasswordGenerator
 from logger import Logger
 
 LOG_FILENAME = 'log'
+MAX_MIN_LENGTH = 250
 
 def parse_args() -> tuple:
     """Parses command line arguments."""
@@ -94,6 +95,7 @@ def main() -> None:
     composite_seed = ''.join([service, secret, str(iteration)])
     PasswordGenerator.seed(composite_seed)
     try:
+        min_length = MAX_MIN_LENGTH if min_length > MAX_MIN_LENGTH else min_length
         password = PasswordGenerator.generate(min_length, upper, lower, digit, special)
     except ValueError as e:
         print(e)

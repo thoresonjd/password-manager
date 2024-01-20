@@ -4,6 +4,14 @@
 
 Generates and manages passwords for different services closely conforming to length and character requirements.
 
+## Password Generation
+
+Passwords are generated pseudorandomly given a seed, which, therefore, allows passwords to be recovered as long as the same input arguments are provided. To seed the password generator, a string is required. This string is the concatenation of three input fields: the name of the service to generate a password for, a secret phrase, and an iteration, the number of times the current input has been provided (except the iteration itself) to generate a password.
+
+After seeding, a password can be generated. To generate a password, a minimum password length must be provided as well as one to four options. These options determine which type of characters to include in the generated password: uppercase and lowercase letters, digits, and special characters.
+
+The password is guaranteed to include at least one of each character type selected. Thus, the length of the password will be the nearest multiple of the number of options selected rounded up from the minimum length. For example, if a minimum length of one is provided, and all four character types are selected, the password will be four characters long, containing one of each character type.
+
 ## Command Line Interface
 
 ### Usage
@@ -14,24 +22,24 @@ To generate a password, four input arguments are required:
 - `iteration` - how many times this password was generated with the current `service` and `secret` (integer)
 - `min_length` - the minimum length of the password to generate (integer)
 
-Empty strings are permitted for `service` and `secret`.
+Empty strings are permitted for `service` and `secret`. However, it is advised to provide non-empty data for both, especially `secret`, to amplify the security and uniqueness of each password generated across each individual.
 
 At least one of the following options are also required:
 - `-u, --upper` - include uppercase letters
 - `-l, --lower` - include lowercase letters
-- `-n, --number` - include numbers
+- `-d, --digit` - include digits
 - `-s, --special` - include special characters
 
 Using the `-h, --help` option will display usage details.
 
 ```
-python3 pm_cli.py [-h|--help] [-u|--upper] [-l|--lower] [-n|--number] [-s|--special] service secret iteration min_length
+python3 pm_cli.py [-h|--help] [-u|--upper] [-l|--lower] [-d|--digit] [-s|--special] service secret iteration min_length
 ```
 
 ### Example
 
 ```
-> python3 pm_cli.py test-service test-secret 1 12 -ulns
+> python3 pm_cli.py test-service test-secret 1 12 -ulds
 #r%bPF593Yt#
 ```
 
